@@ -1,0 +1,34 @@
+#! /bin/sh
+
+if [ "$#" -lt "6" ] ; then
+  echo "Usage: $0 <admin-user> <admin-password> <database-name> <database-user> <database-user-password> <fusionauth-version> [<database-hostname>]"
+  exit 1
+fi
+
+ADMIN_USER=$1
+ADMIN_PASSWORD=$2
+DATABASE_NAME=$3
+DATABASE_USER=$4
+DATABASE_USER_PASSWORD=$5
+FUSIONAUTH_VERSION=$6
+DATABASE_HOSTNAME=$7
+DATABASE_HOSTNAME_OPTION=""
+if [ ! -z $DATABASE_HOSTNAME ] ; then
+  DATABASE_HOSTNAME_OPTION="-h $DATABASE_HOSTNAME"
+fi
+
+export PGPASSWORD=$ADMIN_PASSWORD
+psql $DATABASE_HOSTNAME_OPTION -U $ADMIN_USER -d postgres -c "DROP DATABASE IF EXISTS $DATABASE_NAME;"
+psql $DATABASE_HOSTNAME_OPTION -U $ADMIN_USER -d postgres -c "DROP ROLE IF EXISTS $DATABASE_USER;"
+psql $DATABASE_HOSTNAME_OPTION -U $ADMIN_USER -d postgres -c "CREATE ROLE $DATABASE_USER WITH LOGIN PASSWORD '$DATABASE_USER_PASSWORD';"
+psql $DATABASE_HOSTNAME_OPTION -U $ADMIN_USER -d postgres -c "CREATE DATABASE $DATABASE_NAME ENCODING 'UTF-8' TEMPLATE template0;"
+psql $DATABASE_HOSTNAME_OPTION -U $ADMIN_USER -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE $DATABASE_NAME TO $DATABASE_USER; ALTER DATABASE $DATABASE_NAME OWNER TO $DATABASE_USER;"
+wget https://storage.googleapis.com/inversoft_products_j098230498/products/fusionauth/$FUSIONAUTH_VERSION/fusionauth-database-schema-$FUSIONAUTH_VERSION.zip -O schema.zip
+rm -Rf schema
+mkdir schema
+unzip -d schema schema.zip
+CURRENT_DIR=$PWD
+cd schema
+export PGPASSWORD=$DATABASE_USER_PASSWORD
+psql $DATABASE_HOSTNAME_OPTION -U $DATABASE_USER $DATABASE_NAME < postgresql.sql
+cd $CURRENT_DIR

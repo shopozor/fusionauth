@@ -5,7 +5,7 @@ application:
   name: Shopozor Auth
   version: 0.0
 
-  baseUrl: http://gitlab.hidora.com/softozor/shopozor/services/raw/master
+  baseUrl: https://raw.githubusercontent.com/shopozor/fusionauth/master
 
   settings:
     fields:
@@ -130,14 +130,14 @@ application:
       - yum install -y postgresql
       user: root
     - cmd [bl]:
-      - curl -fsSL ${baseUrl}/jelastic/postgres/reset_auth_db.sh | /bin/sh -s ${settings.authDatabaseRootUser} ${settings.authDatabaseRootUserPassword} ${settings.authDatabaseName} ${settings.authDatabaseUser} ${settings.authDatabaseUserPassword} ${settings.fusionauthVersion} ${settings.authDatabaseHostname}
+      - curl -fsSL ${baseUrl}/scripts/reset_auth_db.sh | /bin/sh -s ${settings.authDatabaseRootUser} ${settings.authDatabaseRootUserPassword} ${settings.authDatabaseName} ${settings.authDatabaseUser} ${settings.authDatabaseUserPassword} ${settings.fusionauthVersion} ${settings.authDatabaseHostname}
     setupKickstart:
     - jelastic.environment.control.AddContainerEnvVars [cp]:
         vars:
           FUSIONAUTH_KICKSTART: /kickstart/kickstart.json
     - cmd [bl]: |-
-        wget ${baseUrl}/jelastic/auth/conf/kickstart.json -O kickstart.json
-        wget ${baseUrl}/jelastic/auth/scripts/setup_kickstart.py -O setup_kickstart.py
+        wget ${baseUrl}/conf/kickstart.json -O kickstart.json
+        wget ${baseUrl}/scripts/setup_kickstart.py -O setup_kickstart.py
         mkdir /data
         python setup_kickstart.py --admin-email=${settings.authAdminUserEmail} \
           --admin-password=${globals.AUTH_ADMIN_USER_PASSWORD} \
@@ -155,13 +155,13 @@ application:
     - restartNodes [bl]
     redirectHttpToHttps:
     - cmd [bl]:
-      - wget ${baseUrl}/jelastic/auth/conf/nginx/1.16.1/nginx-jelastic.conf -O /etc/nginx/nginx-jelastic.conf
+      - wget ${baseUrl}/conf/nginx/1.16.1/nginx-jelastic.conf -O /etc/nginx/nginx-jelastic.conf
       user: root
     configureSSL:
     - installAddon:
         id: letsencrypt
     - cmd [bl]:
-      - wget ${baseUrl}/jelastic/auth/conf/nginx/1.16.1/conf.d/ssl.conf -O /etc/nginx/conf.d/ssl.conf
+      - wget ${baseUrl}/conf/nginx/1.16.1/conf.d/ssl.conf -O /etc/nginx/conf.d/ssl.conf
     - cmd [bl]:
       - openssl dhparam -out ${globals.DHPARAM_FILENAME} ${settings.openSslNumbits}
     - replaceConfigPlaceholders:
