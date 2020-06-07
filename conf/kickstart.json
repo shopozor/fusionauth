@@ -1,0 +1,372 @@
+{
+  "apiKeys": [
+    {
+      "description": "Core API Key",
+      "key": "#{UUID()}"
+    },
+    {
+      "description": "Staging API Key",
+      "key": "#{UUID()}",
+      "permissions": {
+        "endpoints": {
+          "/api/login": [
+            "POST"
+          ],
+          "/api/user": [
+            "POST",
+            "DELETE"
+          ],
+          "/api/user/registration": [
+            "POST"
+          ]
+        }
+      }
+    },
+    {
+      "description": "Preprod API Key",
+      "key": "#{UUID()}",
+      "permissions": {
+        "endpoints": {
+          "/api/login": [
+            "POST"
+          ],
+          "/api/user": [
+            "POST",
+            "DELETE"
+          ],
+          "/api/user/registration": [
+            "POST"
+          ]
+        }
+      }
+    },
+    {
+      "description": "Prod API Key",
+      "key": "#{UUID()}",
+      "permissions": {
+        "endpoints": {
+          "/api/login": [
+            "POST"
+          ],
+          "/api/user": [
+            "POST",
+            "DELETE"
+          ],
+          "/api/user/registration": [
+            "POST"
+          ]
+        }
+      }
+    }
+  ],
+  "requests": [
+    {
+      "body": {
+        "registration": {
+          "applicationId": "#{FUSIONAUTH_APPLICATION_ID}",
+          "roles": [
+            "admin"
+          ]
+        },
+        "user": {
+          "email": "#{adminEmail}",
+          "password": "#{adminPassword}"
+        }
+      },
+      "method": "POST",
+      "url": "/api/user/registration"
+    },
+    {
+      "body": {
+        "tenant": {
+          "issuer": "#{issuer}",
+          "name": "Default"
+        }
+      },
+      "method": "PATCH",
+      "url": "/api/tenant/#{defaultTenantId}"
+    },
+    {
+      "body": {
+        "key": {
+          "algorithm": "RS256",
+          "length": 2048,
+          "name": "RS256 Access token signing key for staging"
+        }
+      },
+      "method": "POST",
+      "url": "/api/key/generate/#{accessTokenSigningKeyIdForStaging}"
+    },
+    {
+      "body": {
+        "key": {
+          "algorithm": "RS256",
+          "length": 2048,
+          "name": "RS256 Access token signing key for preprod"
+        }
+      },
+      "method": "POST",
+      "url": "/api/key/generate/#{accessTokenSigningKeyIdForPreprod}"
+    },
+    {
+      "body": {
+        "key": {
+          "algorithm": "RS256",
+          "length": 2048,
+          "name": "RS256 Access token signing key for production"
+        }
+      },
+      "method": "POST",
+      "url": "/api/key/generate/#{accessTokenSigningKeyIdForProd}"
+    },
+    {
+      "body": {
+        "lambda": {
+          "body": "function populate(jwt, user, registration) { jwt['#{hasuraClaimsNamespace}'] = { 'x-hasura-allowed-roles': jwt.roles, 'x-hasura-default-role': jwt.roles[0], 'x-hasura-user-id': user.id }; }",
+          "debug": true,
+          "enabled": true,
+          "name": "hasura",
+          "type": "JWTPopulate"
+        }
+      },
+      "method": "POST",
+      "url": "/api/lambda/#{hasuraLambdaId}"
+    },
+    {
+      "body": {
+        "application": {
+          "jwtConfiguration": {
+            "accessTokenKeyId": "#{accessTokenSigningKeyIdForStaging}",
+            "enabled": true,
+            "refreshTokenTimeToLiveInMinutes": 1440,
+            "timeToLiveInSeconds": 3600
+          },
+          "lambdaConfiguration": {
+            "accessTokenPopulateId": "#{hasuraLambdaId}"
+          },
+          "loginConfiguration": {
+            "allowTokenRefresh": true,
+            "generateRefreshTokens": true,
+            "requireAuthentication": true
+          },
+          "name": "staging-consumer-ui",
+          "roles": [
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "consumer"
+            }
+          ]
+        }
+      },
+      "method": "POST",
+      "url": "/api/application"
+    },
+    {
+      "body": {
+        "application": {
+          "jwtConfiguration": {
+            "accessTokenKeyId": "#{accessTokenSigningKeyIdForStaging}",
+            "enabled": true,
+            "refreshTokenTimeToLiveInMinutes": 1440,
+            "timeToLiveInSeconds": 3600
+          },
+          "lambdaConfiguration": {
+            "accessTokenPopulateId": "#{hasuraLambdaId}"
+          },
+          "loginConfiguration": {
+            "allowTokenRefresh": true,
+            "generateRefreshTokens": true,
+            "requireAuthentication": true
+          },
+          "name": "staging-admin-ui",
+          "roles": [
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "delivery"
+            },
+            {
+              "isDefault": true,
+              "isSuperRole": false,
+              "name": "producer"
+            },
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "manager"
+            },
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "rex"
+            }
+          ]
+        }
+      },
+      "method": "POST",
+      "url": "/api/application"
+    },
+    {
+      "body": {
+        "application": {
+          "jwtConfiguration": {
+            "accessTokenKeyId": "#{accessTokenSigningKeyIdForPreprod}",
+            "enabled": true,
+            "refreshTokenTimeToLiveInMinutes": 43200,
+            "timeToLiveInSeconds": 3600
+          },
+          "lambdaConfiguration": {
+            "accessTokenPopulateId": "#{hasuraLambdaId}"
+          },
+          "loginConfiguration": {
+            "allowTokenRefresh": true,
+            "generateRefreshTokens": true,
+            "requireAuthentication": true
+          },
+          "name": "preprod-consumer-ui",
+          "roles": [
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "consumer"
+            }
+          ]
+        }
+      },
+      "method": "POST",
+      "url": "/api/application"
+    },
+    {
+      "body": {
+        "application": {
+          "jwtConfiguration": {
+            "accessTokenKeyId": "#{accessTokenSigningKeyIdForPreprod}",
+            "enabled": true,
+            "refreshTokenTimeToLiveInMinutes": 43200,
+            "timeToLiveInSeconds": 3600
+          },
+          "lambdaConfiguration": {
+            "accessTokenPopulateId": "#{hasuraLambdaId}"
+          },
+          "loginConfiguration": {
+            "allowTokenRefresh": true,
+            "generateRefreshTokens": true,
+            "requireAuthentication": true
+          },
+          "name": "preprod-admin-ui",
+          "roles": [
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "delivery"
+            },
+            {
+              "isDefault": true,
+              "isSuperRole": false,
+              "name": "producer"
+            },
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "manager"
+            },
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "rex"
+            }
+          ]
+        }
+      },
+      "method": "POST",
+      "url": "/api/application"
+    },
+    {
+      "body": {
+        "application": {
+          "jwtConfiguration": {
+            "accessTokenKeyId": "#{accessTokenSigningKeyIdForProd}",
+            "enabled": true,
+            "refreshTokenTimeToLiveInMinutes": 43200,
+            "timeToLiveInSeconds": 3600
+          },
+          "lambdaConfiguration": {
+            "accessTokenPopulateId": "#{hasuraLambdaId}"
+          },
+          "loginConfiguration": {
+            "allowTokenRefresh": true,
+            "generateRefreshTokens": true,
+            "requireAuthentication": true
+          },
+          "name": "prod-consumer-ui",
+          "roles": [
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "consumer"
+            }
+          ]
+        }
+      },
+      "method": "POST",
+      "url": "/api/application"
+    },
+    {
+      "body": {
+        "application": {
+          "jwtConfiguration": {
+            "accessTokenKeyId": "#{accessTokenSigningKeyIdForProd}",
+            "enabled": true,
+            "refreshTokenTimeToLiveInMinutes": 43200,
+            "timeToLiveInSeconds": 3600
+          },
+          "lambdaConfiguration": {
+            "accessTokenPopulateId": "#{hasuraLambdaId}"
+          },
+          "loginConfiguration": {
+            "allowTokenRefresh": true,
+            "generateRefreshTokens": true,
+            "requireAuthentication": true
+          },
+          "name": "prod-admin-ui",
+          "roles": [
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "delivery"
+            },
+            {
+              "isDefault": true,
+              "isSuperRole": false,
+              "name": "producer"
+            },
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "manager"
+            },
+            {
+              "isDefault": false,
+              "isSuperRole": false,
+              "name": "rex"
+            }
+          ]
+        }
+      },
+      "method": "POST",
+      "url": "/api/application"
+    }
+  ],
+  "variables": {
+    "accessTokenSigningKeyIdForPreprod": "#{UUID()}",
+    "accessTokenSigningKeyIdForProd": "#{UUID()}",
+    "accessTokenSigningKeyIdForStaging": "#{UUID()}",
+    "adminEmail": "ADMIN_EMAIL",
+    "adminPassword": "ADMIN_PASSWORD",
+    "defaultTenantId": "DEFAULT_TENANT_ID",
+    "hasuraClaimsNamespace": "HASURA_CLAIMS_NAMESPACE",
+    "hasuraLambdaId": "#{UUID()}",
+    "issuer": "ISSUER"
+  }
+}
